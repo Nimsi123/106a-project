@@ -20,41 +20,46 @@ right_hand = {"position": [1.017, 0.154, 0.314], "orientation": [0.539, -0.457, 
 revolute_joints = [right_l0, right_l1, right_l2, right_l3, right_l4, right_l5, right_l6]
 
 # preprocess
-for joint in revolute_joints:
-	# arrange values to [q.w, q.x, q.y, q.z]
-	q_z = joint["orientation"][3]
-	joint["orientation"][1:3] = joint["orientation"][0:2]
-	joint["orientation"][0] = q_z
+# for joint in revolute_joints:
+# 	# arrange values to [q.w, q.x, q.y, q.z]
+# 	q_z = joint["orientation"][3]
+# 	joint["orientation"][1:3] = joint["orientation"][0:2]
+# 	joint["orientation"][0] = q_z
 
 
 manipulator_jacobian = np.zeros((6, 7))
 for i, joint in enumerate(revolute_joints):
-	q = joint["position"]
-	R_SE3 = quaternion_matrix(joint["orientation"])
-	w = R_SE3[:3, 2] # z axis is the axis of rotation
-	v = - np.cross(w, q)
-	xi = np.concatenate((v, w))
-	manipulator_jacobian[:, i] = xi
+  q = joint["position"]
+  R_SE3 = quaternion_matrix(joint["orientation"])
+  w = R_SE3[:3, 2] # z axis is the axis of rotation
+  v = - np.cross(w, q)
+  xi = np.concatenate((v, w))
+  # print(f"Xi {i}: {xi}")
+  manipulator_jacobian[:, i] = xi
 
-print(repr(manipulator_jacobian))
+# print("Manipulator Jacobian")
+# print(repr(manipulator_jacobian))
+
+print(manipulator_jacobian[:, 1])
 
 """
-np.array([[ 8.00000000e-02,  3.16194961e-01,  2.73718737e-01,
-         3.16015605e-01,  2.14951957e-01,  3.14098549e-01,
-        -1.95910301e-01],
-       [-0.00000000e+00,  9.34949244e-04,  1.36463949e-01,
-        -1.18932680e-03,  6.55368961e-03, -1.13173427e-03,
-         1.02141999e+00],
-       [-0.00000000e+00, -8.11979092e-02, -2.75645230e-01,
-        -4.84002242e-01, -4.14625117e-01, -8.81096290e-01,
-         1.17975606e-01],
-       [ 0.00000000e+00,  3.98400025e-03,  6.68857217e-01,
-         6.97880485e-03,  6.70415211e-01,  1.99600401e-03,
-         1.80382160e-01],
-       [-1.00000000e+00, -9.99984064e-01, -6.63199557e-01,
-        -9.99951050e-01, -6.60983217e-01, -9.99996016e-01,
-         1.46929898e-01],
-       [ 0.00000000e+00,  3.99993626e-03,  3.35851709e-01,
-         7.01376880e-03,  3.37112194e-01,  1.99600401e-03,
-        -9.72560477e-01]])
+np.array([[-0.00000000e+00, -3.16242120e-01,  1.16080254e-03,
+        -3.15726565e-01,  1.61240502e-03, -3.14144466e-01,
+         9.20890217e-04],
+       [-0.00000000e+00,  1.98024061e-03,  3.17245332e-01,
+         4.62386380e-03,  3.20134825e-01,  4.20912799e-03,
+         3.13764870e-01],
+       [-0.00000000e+00,  8.07487331e-02, -1.92571890e-01,
+         4.81956263e-01, -2.34330995e-02,  8.80735090e-01,
+        -1.56793991e-01],
+       [ 0.00000000e+00,  4.98496037e-03,  9.99958989e-01,
+         6.97880485e-03,  9.99947986e-01,  4.99895605e-03,
+         9.99996004e-01],
+       [ 0.00000000e+00,  9.99975075e-01, -7.08396226e-03,
+         9.99963038e-01, -5.65756149e-03,  9.99983017e-01,
+        -2.81714342e-03],
+       [ 1.00000000e+00, -4.99991526e-03, -5.64256299e-03,
+        -5.02182250e-03, -8.48634223e-03, -2.99597706e-03,
+         2.35760938e-04]])
 """
+

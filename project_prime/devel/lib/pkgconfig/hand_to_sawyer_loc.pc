@@ -1,0 +1,8 @@
+prefix=/home/cc/ee106a/fa22/class/ee106a-aew/ros_workspaces/project_prime/devel
+
+Name: hand_to_sawyer_loc
+Description: Description of hand_to_sawyer_loc
+Version: 0.0.0
+Cflags: 
+Libs: -L${prefix}/lib 
+Requires: 

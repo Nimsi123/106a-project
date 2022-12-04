@@ -13,24 +13,24 @@ def SE3_to_Adjoint(g):
     ))
 
 def get_manip_jacob(thetas):
-  manipulator_jacobian = np.array([[ 8.00000000e-02,  3.16194961e-01,  2.73718737e-01,
-         3.16015605e-01,  2.14951957e-01,  3.14098549e-01,
-        -1.95910301e-01],
-       [-0.00000000e+00,  9.34949244e-04,  1.36463949e-01,
-        -1.18932680e-03,  6.55368961e-03, -1.13173427e-03,
-         1.02141999e+00],
-       [-0.00000000e+00, -8.11979092e-02, -2.75645230e-01,
-        -4.84002242e-01, -4.14625117e-01, -8.81096290e-01,
-         1.17975606e-01],
-       [ 0.00000000e+00,  3.98400025e-03,  6.68857217e-01,
-         6.97880485e-03,  6.70415211e-01,  1.99600401e-03,
-         1.80382160e-01],
-       [-1.00000000e+00, -9.99984064e-01, -6.63199557e-01,
-        -9.99951050e-01, -6.60983217e-01, -9.99996016e-01,
-         1.46929898e-01],
-       [ 0.00000000e+00,  3.99993626e-03,  3.35851709e-01,
-         7.01376880e-03,  3.37112194e-01,  1.99600401e-03,
-        -9.72560477e-01]])
+  manipulator_jacobian = np.array([[-0.00000000e+00, -3.16242120e-01,  1.16080254e-03,
+        -3.15726565e-01,  1.61240502e-03, -3.14144466e-01,
+         9.20890217e-04],
+       [-0.00000000e+00,  1.98024061e-03,  3.17245332e-01,
+         4.62386380e-03,  3.20134825e-01,  4.20912799e-03,
+         3.13764870e-01],
+       [-0.00000000e+00,  8.07487331e-02, -1.92571890e-01,
+         4.81956263e-01, -2.34330995e-02,  8.80735090e-01,
+        -1.56793991e-01],
+       [ 0.00000000e+00,  4.98496037e-03,  9.99958989e-01,
+         6.97880485e-03,  9.99947986e-01,  4.99895605e-03,
+         9.99996004e-01],
+       [ 0.00000000e+00,  9.99975075e-01, -7.08396226e-03,
+         9.99963038e-01, -5.65756149e-03,  9.99983017e-01,
+        -2.81714342e-03],
+       [ 1.00000000e+00, -4.99991526e-03, -5.64256299e-03,
+        -5.02182250e-03, -8.48634223e-03, -2.99597706e-03,
+         2.35760938e-04]])
 
   new_manipulator_jacobian = np.zeros(manipulator_jacobian.shape)
 
@@ -40,6 +40,8 @@ def get_manip_jacob(thetas):
     g = kfs.prod_exp(manipulator_jacobian[:, :i], thetas[:i])
     Ad_g = SE3_to_Adjoint(g)
     new_manipulator_jacobian[:, i] = Ad_g @ manipulator_jacobian[:, i]
+
+  # manipulator_jacobian = new_manipulator_jacobian
 
   return new_manipulator_jacobian
 
@@ -59,8 +61,19 @@ def control_joint_to_desired_angle(limb, joint_name, desired_angle):
     # print(limb.joint_angle(joint_name))
     limb.set_joint_positions(joint_command)
 
+def control_joints_to_desired_angles(limb, joint_names, desired_angles):
+
+  joint_command = dict(zip(joint_names, desired_angles))
+  limb.set_joint_position_speed(0.3)
+
+  def close():
+    return all([np.isclose(limb.joint_angle(joint_name), desired_angle, atol = 0.01) for joint_name, desired_angle in zip(joint_names, desired_angles)])
+
+  while not close() and not rospy.is_shutdown():
+    limb.set_joint_positions(joint_command)
+
 def set_spatial_velocity(limb, desired_spatial_velocity, seconds):
-  joints = limb.joint_names() # ['right_j0', 'right_j1', 'right_j2', 'right_j3', 'right_j4', 'right_j5', 'right_j6']
+  joint_names = limb.joint_names() # ['right_j0', 'right_j1', 'right_j2', 'right_j3', 'right_j4', 'right_j5', 'right_j6']
 
   start = time.time()
   while (time.time() - start) < seconds and not rospy.is_shutdown():
@@ -70,16 +83,19 @@ def set_spatial_velocity(limb, desired_spatial_velocity, seconds):
     theta_dot = np.linalg.pinv(manip_jacob) @ desired_spatial_velocity / (2 * np.pi)
     desired_thetas = current_thetas + theta_dot
 
-    # print(current_thetas)
-    # print(theta_dot)
+    # print("Current thetas: ", current_thetas)
+    # print("Theta dot: ", theta_dot)
+    # print("(Normalized) Theta dot: ", theta_dot / np.linalg.norm(theta_dot))
     # print(desired_thetas)
     # print("---------")
 
-    for i, theta_delta in enumerate(theta_dot[:7]):
+    control_joints_to_desired_angles(limb, joint_names, desired_thetas)
 
-      joint_name = joints[i]
-      desired_theta = desired_thetas[i]
-      control_joint_to_desired_angle(limb, joint_name, desired_theta)
+    # for i, theta_delta in enumerate(theta_dot):
+
+    #   joint_name = joints[i]
+    #   desired_theta = desired_thetas[i]
+    #   control_joint_to_desired_angle(limb, joint_name, desired_theta)
       
 
 def move_joints_to_zero_config(limb, joints):

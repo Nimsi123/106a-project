@@ -8,13 +8,10 @@ import intera_external_devices
 from intera_interface import CHECK_VERSION
 import utils
 
-
-manip_jacob_pseudo = np.linalg.pinv(utils.get_manip_jacob(np.array([0, 0, 0, 0, 0, 0, 0, 0])))
-
 desired_spatial_velocities = [
 	{
 		"description": "",
-		"xi": [0, 0, 0, 0, 1, 0],
+		"xi": [3, 0, 0, 0, 0, 0],
 	}, 
 
 ]
@@ -61,9 +58,9 @@ rospy.on_shutdown(clean_shutdown)
 rospy.loginfo("Enabling robot...")
 rs.enable()
 
-utils.move_joints_to_zero_config(limb, joints)
+# utils.move_joints_to_zero_config(limb, joints)
 
-# utils.control_joint_to_desired_angle(limb, joints[0], np.pi / 4)
+# utils.control_joint_to_desired_angle(limb, joints[1], -np.pi / 8)
 
 # try desired trajectories
 for spatial_velocity in desired_spatial_velocities:	
@@ -71,8 +68,21 @@ for spatial_velocity in desired_spatial_velocities:
 	print(spatial_velocity["description"])
 	print(spatial_velocity["xi"])
 
-	# utils.set_spatial_velocity(limb, spatial_velocity["xi"], 10)
-		
+	print("Start?")
+	input()
 
+	utils.set_spatial_velocity(limb, spatial_velocity["xi"], 3)
+
+#----------------------
+init_manip_jacob = utils.get_manip_jacob(np.array([0, 0, 0, 0, 0, 0, 0]))
+# print("Going to start!")
+# for i in list(range(init_manip_jacob.shape[1])):
+# 	print(f"Move joint {i}?")
+# 	input()
+
+# 	utils.move_joints_to_zero_config(limb, joints)
+# 	xi = init_manip_jacob[:, i]
+# 	utils.set_spatial_velocity(limb, xi, 3)
+#----------------------
 
 print("Done.")

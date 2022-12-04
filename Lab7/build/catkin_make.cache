@@ -1,0 +1,2 @@
+planning
+-DCATKIN_DEVEL_PREFIX=/home/cc/ee106a/fa22/class/ee106a-aew/ros_workspaces/Lab7/devel -DCMAKE_INSTALL_PREFIX=/home/cc/ee106a/fa22/class/ee106a-aew/ros_workspaces/Lab7/install -G Unix Makefiles
