@@ -7,7 +7,4 @@
 # new environment variables
 
 # modified environment variables
-export CMAKE_PREFIX_PATH="/home/cc/ee106a/fa22/class/ee106a-aew/ros_workspaces/project_prime/devel:$CMAKE_PREFIX_PATH"
 export PWD='/home/cc/ee106a/fa22/class/ee106a-aew/ros_workspaces/project_prime/build'
-export ROSLISP_PACKAGE_DIRECTORIES="/home/cc/ee106a/fa22/class/ee106a-aew/ros_workspaces/project_prime/devel/share/common-lisp:$ROSLISP_PACKAGE_DIRECTORIES"
-export ROS_PACKAGE_PATH="/home/cc/ee106a/fa22/class/ee106a-aew/ros_workspaces/project_prime/src:$ROS_PACKAGE_PATH"

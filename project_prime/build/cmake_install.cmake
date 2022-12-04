@@ -132,6 +132,8 @@ if(NOT CMAKE_INSTALL_LOCAL_ONLY)
   # Include the install script for each subdirectory.
   include("/home/cc/ee106a/fa22/class/ee106a-aew/ros_workspaces/project_prime/build/gtest/cmake_install.cmake")
   include("/home/cc/ee106a/fa22/class/ee106a-aew/ros_workspaces/project_prime/build/hand_to_sawyer_loc/cmake_install.cmake")
+  include("/home/cc/ee106a/fa22/class/ee106a-aew/ros_workspaces/project_prime/build/path_planner/cmake_install.cmake")
+  include("/home/cc/ee106a/fa22/class/ee106a-aew/ros_workspaces/project_prime/build/sawyer_actuator/cmake_install.cmake")
 
 endif()
 

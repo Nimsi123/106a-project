@@ -8,10 +8,10 @@ def actuator(trajectory):
   
   # actuate the path
 
-  path_pub.publish("Actuation completed.")
+  status_pub.publish(f"Actuation completed. {trajectory}")
 
 if __name__ == '__main__':
     rospy.init_node('sawyer_actuator', anonymous=True)
 
-    rospy.Subscriber("actuation_path", MultiDOFJointTrajectory, actuator)
+    rospy.Subscriber("actuation_path", String, actuator) # replace String with MultiDOFJointTrajectory
     rospy.spin()

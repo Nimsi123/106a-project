@@ -1,0 +1,8 @@
+prefix=/home/cc/ee106a/fa22/class/ee106a-aew/ros_workspaces/project_prime/install
+
+Name: sawyer_actuator
+Description: Description of sawyer_actuator
+Version: 0.0.0
+Cflags: 
+Libs: -L${prefix}/lib 
+Requires: 

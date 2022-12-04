@@ -10,7 +10,7 @@ def test_main():
   # tfListener = tf2_ros.TransformListener(tfBuffer) # which is primed with a tf listener
   
   # Sets the minimum publishing rate by sleeping for 10hz
-  r = rospy.Rate(10)
+  r = rospy.Rate(1)
 
   counter = 0
   while not rospy.is_shutdown():
@@ -28,7 +28,7 @@ def test_main():
     point_pub.publish(p)
 
     r.sleep()
-    counter += 1
+    counter = (counter + 1) % 100
 
 if __name__ == '__main__':
   rospy.init_node('hand_to_saywer_loc', anonymous=True)

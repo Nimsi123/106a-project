@@ -6,3 +6,5 @@
 # testing this directory and lists subdirectories to be tested as well.
 subdirs("gtest")
 subdirs("hand_to_sawyer_loc")
+subdirs("path_planner")
+subdirs("sawyer_actuator")

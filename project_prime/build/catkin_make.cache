@@ -1,2 +1,2 @@
-hand_to_sawyer_loc
+hand_to_sawyer_loc:path_planner:sawyer_actuator
 -DCATKIN_DEVEL_PREFIX=/home/cc/ee106a/fa22/class/ee106a-aew/ros_workspaces/project_prime/devel -DCMAKE_INSTALL_PREFIX=/home/cc/ee106a/fa22/class/ee106a-aew/ros_workspaces/project_prime/install -G Unix Makefiles

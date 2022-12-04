@@ -55,12 +55,16 @@ CMAKE_BINARY_DIR = /home/cc/ee106a/fa22/class/ee106a-aew/ros_workspaces/project_
 # The main recursive "all" target.
 all: gtest/all
 all: hand_to_sawyer_loc/all
+all: path_planner/all
+all: sawyer_actuator/all
 
 .PHONY : all
 
 # The main recursive "preinstall" target.
 preinstall: gtest/preinstall
 preinstall: hand_to_sawyer_loc/preinstall
+preinstall: path_planner/preinstall
+preinstall: sawyer_actuator/preinstall
 
 .PHONY : preinstall
 
@@ -72,6 +76,8 @@ clean: CMakeFiles/tests.dir/clean
 clean: CMakeFiles/download_extra_data.dir/clean
 clean: gtest/clean
 clean: hand_to_sawyer_loc/clean
+clean: path_planner/clean
+clean: sawyer_actuator/clean
 
 .PHONY : clean
 
@@ -213,6 +219,42 @@ hand_to_sawyer_loc/clean: hand_to_sawyer_loc/CMakeFiles/intera_core_msgs_generat
 .PHONY : hand_to_sawyer_loc/clean
 
 #=============================================================================
+# Directory level rules for directory path_planner
+
+# Recursive "all" directory target.
+path_planner/all:
+
+.PHONY : path_planner/all
+
+# Recursive "preinstall" directory target.
+path_planner/preinstall:
+
+.PHONY : path_planner/preinstall
+
+# Recursive "clean" directory target.
+path_planner/clean:
+
+.PHONY : path_planner/clean
+
+#=============================================================================
+# Directory level rules for directory sawyer_actuator
+
+# Recursive "all" directory target.
+sawyer_actuator/all:
+
+.PHONY : sawyer_actuator/all
+
+# Recursive "preinstall" directory target.
+sawyer_actuator/preinstall:
+
+.PHONY : sawyer_actuator/preinstall
+
+# Recursive "clean" directory target.
+sawyer_actuator/clean:
+
+.PHONY : sawyer_actuator/clean
+
+#=============================================================================
 # Target rules for target CMakeFiles/doxygen.dir
 
 # All Build rule for target.
@@ -351,8 +393,8 @@ CMakeFiles/download_extra_data.dir/clean:
 # Target rules for target gtest/googlemock/CMakeFiles/gmock_main.dir
 
 # All Build rule for target.
-gtest/googlemock/CMakeFiles/gmock_main.dir/all: gtest/googlemock/CMakeFiles/gmock.dir/all
 gtest/googlemock/CMakeFiles/gmock_main.dir/all: gtest/googletest/CMakeFiles/gtest.dir/all
+gtest/googlemock/CMakeFiles/gmock_main.dir/all: gtest/googlemock/CMakeFiles/gmock.dir/all
 	$(MAKE) -f gtest/googlemock/CMakeFiles/gmock_main.dir/build.make gtest/googlemock/CMakeFiles/gmock_main.dir/depend
 	$(MAKE) -f gtest/googlemock/CMakeFiles/gmock_main.dir/build.make gtest/googlemock/CMakeFiles/gmock_main.dir/build
 	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --progress-dir=/home/cc/ee106a/fa22/class/ee106a-aew/ros_workspaces/project_prime/build/CMakeFiles --progress-num=3,4 "Built target gmock_main"
