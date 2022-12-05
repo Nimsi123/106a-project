@@ -7,8 +7,10 @@ import numpy as np
 from numpy import linalg
 import sys
 from sawyer_forward_kinematics import get_position_from_fwd_kinematics
+import warnings
 
 def main():
+    warnings.filterwarnings("error")
     # Wait for the IK service to become available
     rospy.wait_for_service('compute_ik')
     rospy.init_node('service_query')
@@ -16,7 +18,7 @@ def main():
     compute_ik = rospy.ServiceProxy('compute_ik', GetPositionIK)
     while not rospy.is_shutdown():
         input('Press [ Enter ]: ')
-        
+
         # Construct the request
         request = GetPositionIKRequest()
         request.ik_request.group_name = "right_arm"
@@ -29,9 +31,9 @@ def main():
         request.ik_request.pose_stamped.header.frame_id = "base"
         
         # Set the desired orientation for the end effector HERE
-        request.ik_request.pose_stamped.pose.position.x = 0.5
-        request.ik_request.pose_stamped.pose.position.y = 0.5
-        request.ik_request.pose_stamped.pose.position.z = 0.0        
+        request.ik_request.pose_stamped.pose.position.x = 2.5
+        request.ik_request.pose_stamped.pose.position.y = 2.5
+        request.ik_request.pose_stamped.pose.position.z = 0.5        
         request.ik_request.pose_stamped.pose.orientation.x = 0.0
         request.ik_request.pose_stamped.pose.orientation.y = 1.0
         request.ik_request.pose_stamped.pose.orientation.z = 0.0
@@ -50,11 +52,12 @@ def main():
 
             # TRY THIS
             # Setting just the position without specifying the orientation
-            group.set_position_target([0.5, 0.5, 0.0])
+            group.set_position_target([2.5, 2.5, 0.5])
 
             # Plan IK
 
             plan = get_best_plan(group)
+            user_input = input("Enter 'y' if the trajectory looks safe on RVIZ")
 
 
             
@@ -67,26 +70,42 @@ def main():
             print("Service call failed: %s"%e)
 
 
-def compute_path_distance():
+def compute_path_distance(positions):
+    total_distance = 0
+    for i in range(1,len(positions)):
+        start_position = positions[i-1]
+        end_position = positions[i]
+        total_distance += np.linalg.norm(end_position - start_position)
+    return total_distance
 
-def get_best_plan():
+
+def get_best_plan(group):
     plans = []
-    best_plan = 0
-    min_cost = 100000000
-    for i in range(0,5):
-        plan = group.plan()
-        plans.append(plan)
-        joint_trajectory_positions = np.array([list(x.positions) for x in plan[1].joint_trajectory.points])
+    best_plan = None
+    min_dist = float('inf')
+    for i in range(50):
+        try:
+            plan = group.plan()
+        # checkpoint = input("check and enter to continue")
+        except Exception:
+            print("No path Found")
+            break
 
-        
-        # FINISH REST!!
-        for joint_angle in plan:
-            get_position_from_fwd_kinematics(joint_angle)
-        # plan_avg_energy = get_avg_joint_energy(joint_trajectory_positions)
-        # print(plan_avg_energy)
-        if plan_avg_energy < min_cost:
-            min_cost = plan_avg_energy
+
+        plans.append(plan)
+        joint_trajectory_angles = np.array([list(x.positions) for x in plan[1].joint_trajectory.points])
+
+        positions = np.array([get_position_from_fwd_kinematics(angle) for angle in joint_trajectory_angles])
+
+        distance = compute_path_distance(positions)
+        print(distance)
+
+        if distance < min_dist:
+            min_dist = distance
             best_plan = plan
+    print("best plan distance: ", min_dist)
+    # attempting to speed up best plan
+    return best_plan
 
 
 
