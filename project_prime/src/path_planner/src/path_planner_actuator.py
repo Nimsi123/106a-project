@@ -8,86 +8,129 @@ from numpy import linalg
 import sys
 from sawyer_forward_kinematics import get_position_from_fwd_kinematics
 import warnings
+import time
 
 import intera_interface
+
+def get_current_joint_angles(limb):
+  current_angles = []
+  for name in limb.joint_names():
+    current_angles.append(limb.joint_angle(name))
+
+  return np.array(current_angles)
+
+def control_joints_to_desired_angles(limb, desired_angles):
+  joint_names = limb.joint_names()
+
+  joint_command = dict(zip(joint_names, desired_angles))
+  limb.set_joint_position_speed(0.3)
+
+  def close():
+    return all([np.isclose(limb.joint_angle(joint_name), desired_angle, atol = 0.01) for joint_name, desired_angle in zip(joint_names, desired_angles)])
+
+  while not close() and not rospy.is_shutdown():
+      start = time.time()
+      while (time.time() - start) < 5:
+        limb.set_joint_positions(joint_command)
+
+
+  print("Done actuating Sawyer!")
 
 def main():
     warnings.filterwarnings("error")
 
-   
-
-    # Wait for the IK service to become available
     rospy.wait_for_service('compute_ik')
-    rospy.init_node('service_query')
-    # Create the function used to call the service
     compute_ik = rospy.ServiceProxy('compute_ik', GetPositionIK)
-    while not rospy.is_shutdown():
-        input('Press [ Enter ]: ')
 
-         # intera_interface speed
-        limb = intera_interface.Limb('right')
-        limb.set_joint_position_speed(0.3)
+    limb = intera_interface.Limb('right')
+    limb.set_joint_position_speed(1.0)
 
-        # Construct the request
+    r = 0.8
+    time_steps = np.linspace(-np.pi / 2, np.pi / 2, 5)
+    x = r * np.cos(time_steps)
+    y = r * np.sin(time_steps)
+    z = 0.5 * np.ones(len(time_steps))
+    points = np.vstack((x, y, z))
+
+    for i in range(points.shape[1]):
+        if rospy.is_shutdown():
+            break
+        point = points[:, i]
+
         request = GetPositionIKRequest()
         request.ik_request.group_name = "right_arm"
 
-        # If a Sawyer does not have a gripper, replace '_gripper_tip' with '_wrist' instead
         link = "right_gripper_tip"
 
         request.ik_request.ik_link_name = link
-        # request.ik_request.attempts = 20
-        request.ik_request.pose_stamped.header.frame_id = "base"
-        
-        # Set the desired orientation for the end effector HERE
-        request.ik_request.pose_stamped.pose.position.x = 0.5
-        request.ik_request.pose_stamped.pose.position.y = 0.5
-        request.ik_request.pose_stamped.pose.position.z = 0.5        
-        request.ik_request.pose_stamped.pose.orientation.x = 0.0
-        request.ik_request.pose_stamped.pose.orientation.y = 1.0
-        request.ik_request.pose_stamped.pose.orientation.z = 0.0
-        request.ik_request.pose_stamped.pose.orientation.w = 0.0
+        request.ik_request.pose_stamped.header.frame_id = "base"     
         
         try:
-            # Send the request to the service
             response = compute_ik(request)
-            
-            # Print the response HERE
-            # print(response)
             group = MoveGroupCommander("right_arm")
 
-            # Setting position and orientation target
-            group.set_pose_target(request.ik_request.pose_stamped)
+            group.set_position_target(point) # Setting just the position without specifying the orientation
 
-            # TRY THIS
-            # Setting just the position without specifying the orientation
-            group.set_position_target([0.5, 0.5, 0.5])
-
-            # Plan IK
-
-            plan = get_best_plan_angles(group)
-            
-            
-            # Execute IK if safe
-            if user_input == 'y':
-                group.execute(plan[1])
+            desired_thetas = get_best_plan_angles(group)
+            control_joints_to_desired_angles(limb, desired_thetas)
             
         except rospy.ServiceException as e:
             print("Service call failed: %s"%e)
 
+def test():
+    warnings.filterwarnings("error")
+
+    rospy.wait_for_service('compute_ik')
+    compute_ik = rospy.ServiceProxy('compute_ik', GetPositionIK)
+
+    limb = intera_interface.Limb('right')
+    limb.set_joint_position_speed(1.0)
+
+    control_joints_to_desired_angles(limb, [0, 0, 0, 0, 0, 0, 0])
+
+    r = 0.8
+    time_steps = np.linspace(-np.pi / 4, np.pi / 4, 5)
+    x = r * np.cos(time_steps)
+    y = r * np.sin(time_steps)
+    z = 0.5 * np.ones(len(time_steps))
+    points = np.vstack((x, y, z))
+
+    ik_results = []
+    for i in range(points.shape[1]):
+        point = points[:, i]
+        request = GetPositionIKRequest()
+        request.ik_request.group_name = "right_arm"
+
+        link = "right_gripper_tip"
+
+        request.ik_request.ik_link_name = link
+        request.ik_request.pose_stamped.header.frame_id = "base"  
+        try:
+            response = compute_ik(request)
+            group = MoveGroupCommander("right_arm")
+            
+            group.set_position_target(point) # Setting just the position without specifying the orientation
+
+            desired_thetas = get_best_plan_angles(group)
+        except rospy.ServiceException as e:
+            print("Service call failed: %s"%e)
+        ik_results.append(desired_thetas)
+
+    for desired_thetas in ik_results:
+        control_joints_to_desired_angles(limb, desired_thetas)
+        
 def get_best_plan_angles(group):
+    # TODO: penalize solutions that don't take us to exact x, y, z position
     # plans = []
     possible_solutions = []
-    for i in range(50):
+    for i in range(40):
         plan = group.plan()
         joint_trajectory_angles = np.array([list(x.positions) for x in plan[1].joint_trajectory.points])
         
         change_in_theta = np.abs(np.array(joint_trajectory_angles[-1]) - np.array(joint_trajectory_angles[0]))
-        possible_solutions.append( (change_in_theta, np.max(change_in_theta)) )
+        possible_solutions.append( (joint_trajectory_angles[-1], np.max(change_in_theta)) )
 
     (best_solution, best_cost) = min(possible_solutions, key = lambda x: x[1])
-    print(best_solution)
-    print(best_cost)
     return best_solution
 
 # def compute_path_distance(positions):
@@ -149,4 +192,5 @@ def get_best_plan_angles(group):
 
 # Python's syntax for a main() method
 if __name__ == '__main__':
-    main()
+    rospy.init_node('service_query')
+    test()
