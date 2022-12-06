@@ -1,7 +1,20 @@
 import rospy
 import numpy as np
-from std_msgs.msg import String
+from std_msgs.msg import Float64MultiArray, String
 from trajectory_msgs.msg import MultiDOFJointTrajectory
+
+def control_joints_to_desired_angles(limb, desired_angles):
+  joint_names = limb.joint_names()
+  joint_command = dict(zip(joint_names, desired_angles))
+  limb.set_joint_position_speed(0.3)
+
+  def close():
+    return all([np.isclose(limb.joint_angle(joint_name), desired_angle, atol = 0.01) for joint_name, desired_angle in zip(joint_names, desired_angles)])
+
+  while not close() and not rospy.is_shutdown():
+      start = time.time()
+      while (time.time() - start) < 5:
+        limb.set_joint_positions(joint_command)
 
 def actuator(min_publishing_period):
   def actuator_helper(trajectory):
