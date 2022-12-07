@@ -11,11 +11,12 @@ def test_main(max_publishing_freq):
   sleeper = rospy.Rate(max_publishing_freq)
 
   r = 0.8
-  time_steps = np.linspace(-np.pi / 2, np.pi / 2, 5)
+  time_steps = np.linspace(-np.pi / 6, np.pi / 6, 5)
   x = r * np.cos(time_steps)
   y = r * np.sin(time_steps)
   z = 0.5 * np.ones(len(time_steps))
   points = np.vstack((x, y, z))
+  print(points.shape)
 
   for i in range(points.shape[1]):
     if rospy.is_shutdown():
@@ -24,14 +25,15 @@ def test_main(max_publishing_freq):
     p = Point()
     p.x, p.y, p.z = points[:, i]
 
-    print("publishing")
+    print(f"publishing {p}")
     point_pub.publish(p)
     sleeper.sleep()
+    break
 
 if __name__ == '__main__':
   rospy.init_node('hand_to_saywer_loc', anonymous=True)
   min_publishing_period = 3
-  max_publishing_freq = min_publishing_period / 3
+  max_publishing_freq = 1 / min_publishing_period
 
   TEST = True
   if TEST:

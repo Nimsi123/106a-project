@@ -70,7 +70,7 @@ def test():
     compute_ik = rospy.ServiceProxy('compute_ik', GetPositionIK)
 
     limb = intera_interface.Limb('right')
-    limb.set_joint_position_speed(1.0)
+    limb.set_joint_position_speed(0.3)
 
     control_joints_to_desired_angles(limb, [0, 0, 0, 0, 0, 0, 0])
 

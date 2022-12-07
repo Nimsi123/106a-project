@@ -2,6 +2,8 @@ import rospy
 import numpy as np
 from std_msgs.msg import Float64MultiArray, String
 from trajectory_msgs.msg import MultiDOFJointTrajectory
+import intera_interface
+import time
 
 def control_joints_to_desired_angles(limb, desired_angles):
   joint_names = limb.joint_names()
@@ -13,24 +15,38 @@ def control_joints_to_desired_angles(limb, desired_angles):
 
   while not close() and not rospy.is_shutdown():
       start = time.time()
-      while (time.time() - start) < 5:
+      while (time.time() - start) < 4:
         limb.set_joint_positions(joint_command)
 
-def actuator(min_publishing_period):
-  def actuator_helper(trajectory):
-    status_pub = rospy.Publisher('actuation_status', String, queue_size=10)
+def actuator():
+  status_pub = rospy.Publisher('actuation_status', String, queue_size=10)
+  free = True
+
+  limb = intera_interface.Limb('right')
+  limb.set_joint_position_speed(1.0)
+
+  def actuator_helper(desired_thetas):
+    nonlocal free
+
+    if free != True:
+      print("Oh shit, moving too fast.")
+      return
+
+    free = False
+    status_pub.publish(f"Actuation started")
     
-    # actuate the path
+    desired_thetas = desired_thetas.data
+    print(f"received {desired_thetas}")
+    control_joints_to_desired_angles(limb, desired_thetas)
 
+    status_pub.publish(f"Actuation completed")
+    free = True
 
-    r = rospy.Rate(min_publishing_period)
-    r.sleep()
-    status_pub.publish(f"Actuation completed. {trajectory}")
   return actuator_helper
 
 if __name__ == '__main__':
     rospy.init_node('sawyer_actuator', anonymous=True)
-    min_publishing_period = 3
-    
-    rospy.Subscriber("actuation_path", String, actuator(min_publishing_period)) # replace String with MultiDOFJointTrajectory
+
+    callback = actuator()
+    rospy.Subscriber("actuation_path", Float64MultiArray, callback)
     rospy.spin()

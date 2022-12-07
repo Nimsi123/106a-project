@@ -6,8 +6,6 @@ from moveit_msgs.srv import GetPositionIK, GetPositionIKRequest
 from moveit_commander import MoveGroupCommander
 import numpy as np
 import warnings
-import time
-import intera_interface
 
 def best_ik_solution(group):
     """
@@ -26,15 +24,14 @@ def best_ik_solution(group):
 
 def plan_path(max_publishing_freq):
 
-  limb = intera_interface.Limb('right')
-  limb.set_joint_position_speed(1.0)
+  path_pub = rospy.Publisher('actuation_path', Float64MultiArray, queue_size=10)
+  sleeper = rospy.Rate(max_publishing_freq)
+
+  rospy.wait_for_service('compute_ik')
+  compute_ik = rospy.ServiceProxy('compute_ik', GetPositionIK)
 
   def plan_path_helper(p):
-    path_pub = rospy.Publisher('actuation_path', Float64MultiArray, queue_size=10) # replace String with MultiDOFJointTrajectory
-
-    
-
-    # plan the path
+    print(f"ik result for {p}")
     request = GetPositionIKRequest()
     request.ik_request.group_name = "right_arm"
     request.ik_request.ik_link_name = "right_gripper_tip"
@@ -48,13 +45,14 @@ def plan_path(max_publishing_freq):
     group = MoveGroupCommander("right_arm")
     group.set_position_target([p.x, p.y, p.z])
     desired_thetas = best_ik_solution(group)
+
     arr = Float64MultiArray()
     arr.data = desired_thetas
-
-    r = rospy.Rate(max_publishing_freq)
-    r.sleep()
-    print("publishing", arr)
+    
+    print(f"desired thetas {desired_thetas}")
     path_pub.publish(arr)
+    sleeper.sleep()
+
   return plan_path_helper
 
 if __name__ == '__main__':
@@ -62,10 +60,6 @@ if __name__ == '__main__':
   min_publishing_period = 3
   max_publishing_freq = 1 / min_publishing_period
 
-  print("waiting for service")
-  rospy.wait_for_service('compute_ik')
-  print("service ready")
-  compute_ik = rospy.ServiceProxy('compute_ik', GetPositionIK)
-
-  rospy.Subscriber("next_sawyer_loc", Point, plan_path(max_publishing_freq))
+  callback = plan_path(max_publishing_freq)
+  rospy.Subscriber("next_sawyer_loc", Point, callback)
   rospy.spin()
