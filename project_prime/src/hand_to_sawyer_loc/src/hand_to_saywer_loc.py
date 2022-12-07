@@ -10,25 +10,54 @@ def test_main(max_publishing_freq):
   # Sets the minimum publishing rate by sleeping for 10hz
   sleeper = rospy.Rate(max_publishing_freq)
 
-  r = 0.8
-  time_steps = np.linspace(-np.pi / 6, np.pi / 6, 5)
-  x = r * np.cos(time_steps)
-  y = r * np.sin(time_steps)
-  z = 0.5 * np.ones(len(time_steps))
-  points = np.vstack((x, y, z))
-  print(points.shape)
+  # origin = np.array((0.4, 0, 0.3))
+  origin = np.array((0.5, 0.5, 0.5))
 
-  for i in range(points.shape[1]):
-    if rospy.is_shutdown():
-      break
+  # flush the pipeline
+  points = [
+    np.array((0, 0, 0)), 
+    np.array((0, 0, 0)), 
+    np.array((0, 0, 0)),
+    ]
+  points = [origin + point for point in points]
 
+  print("Flushing the pipeline.")
+  for point in points:
     p = Point()
-    p.x, p.y, p.z = points[:, i]
+    p.x, p.y, p.z = point
 
     print(f"publishing {p}")
     point_pub.publish(p)
     sleeper.sleep()
-    break
+  print("Pipeline flushed.")
+
+  side_step = [
+    np.array((0.53, 0.20, 0.08)), 
+    np.array((0.70, 0.27, 0.12))
+    ]
+
+  box = [
+    np.array((0.62, 0.7, 0.16)),
+    np.array((0.67, 0.13, 0.91)),
+    np.array((0.83, 0.08, 0.94)),
+  ]
+
+  box = [point / 4 for point in box]
+
+  # points = side_step
+  points = box
+  points = [origin + point for point in points]
+
+  for point in points:
+    if rospy.is_shutdown():
+      break
+
+    p = Point()
+    p.x, p.y, p.z = point
+
+    print(f"publishing {p}")
+    point_pub.publish(p)
+    sleeper.sleep()
 
 if __name__ == '__main__':
   rospy.init_node('hand_to_saywer_loc', anonymous=True)
