@@ -12,7 +12,7 @@ def best_ik_solution(group):
     Returns the ik result that minimizes the largest joint change.
     """
     possible_solutions = []
-    for i in range(40):
+    for i in range(80):
         plan = group.plan()
         joint_trajectory_angles = np.array([list(x.positions) for x in plan[1].joint_trajectory.points])
         
@@ -29,6 +29,7 @@ def plan_path(max_publishing_freq):
 
   rospy.wait_for_service('compute_ik')
   compute_ik = rospy.ServiceProxy('compute_ik', GetPositionIK)
+  print("Path planner ready to run.")
 
   def plan_path_helper(p):
     print(f"ik result for {p}")

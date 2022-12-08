@@ -24,6 +24,11 @@ def actuator():
 
   limb = intera_interface.Limb('right')
   limb.set_joint_position_speed(1.0)
+  print("Actuator ready to run.")
+
+  # print('SETTING TO TUCK POSITION')
+  # control_joints_to_desired_angles(limb, [0, -57, 0, 57, 92, 90])
+  # print('DONE WITH TUCK')
 
   def actuator_helper(desired_thetas):
     nonlocal free
@@ -36,7 +41,7 @@ def actuator():
     status_pub.publish(f"Actuation started")
     
     desired_thetas = desired_thetas.data
-    print(f"received {desired_thetas}")
+    # print(f"received {desired_thetas}")
     control_joints_to_desired_angles(limb, desired_thetas)
 
     status_pub.publish(f"Actuation completed")
