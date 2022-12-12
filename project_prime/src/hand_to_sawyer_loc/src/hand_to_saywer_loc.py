@@ -1,6 +1,5 @@
 import rospy
 import numpy as np
-# import tf2_ros
 from geometry_msgs.msg import Point
 
 def test_main(max_publishing_freq):
@@ -21,16 +20,6 @@ def test_main(max_publishing_freq):
     ]
   points = [origin + point for point in points]
 
-  print("Flushing the pipeline.")
-  for point in points:
-    p = Point()
-    p.x, p.y, p.z = point
-
-    print(f"publishing {p}")
-    point_pub.publish(p)
-    sleeper.sleep()
-  print("Pipeline flushed.")
-
   side_step = [
     np.array((0.53, 0.20, 0.08)), 
     np.array((0.70, 0.27, 0.12))
@@ -45,9 +34,10 @@ def test_main(max_publishing_freq):
   box = [point / 4 for point in box]
 
   # points = side_step
-  points = box
+  points = # box
   points = [origin + point for point in points]
 
+  input("Start?")
   for point in points:
     if rospy.is_shutdown():
       break
@@ -58,6 +48,7 @@ def test_main(max_publishing_freq):
     print(f"publishing {p}")
     point_pub.publish(p)
     sleeper.sleep()
+    # input("Next?")
 
 if __name__ == '__main__':
   rospy.init_node('hand_to_saywer_loc', anonymous=True)

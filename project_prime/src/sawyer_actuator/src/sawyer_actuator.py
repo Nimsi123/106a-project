@@ -25,6 +25,8 @@ def actuator():
   limb = intera_interface.Limb('right')
   limb.set_joint_position_speed(1.0)
 
+  print("Actuator ready.")
+
   def actuator_helper(desired_thetas):
     nonlocal free
 
