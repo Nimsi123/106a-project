@@ -1,6 +1,5 @@
 import rospy
 import numpy as np
-# import tf2_ros
 from geometry_msgs.msg import Point
 
 def test_main(max_publishing_freq):
@@ -9,9 +8,6 @@ def test_main(max_publishing_freq):
 
   # Sets the minimum publishing rate by sleeping for 10hz
   sleeper = rospy.Rate(max_publishing_freq)
-
-  # origin = np.array((0.4, 0, 0.3))
-  # origin = np.array((0.5, 0.5, 0.5))
 
   # TUCK POSITION
   origin = np.array((0.69, 0.16, 0.38))
