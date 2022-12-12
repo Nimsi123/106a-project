@@ -17,7 +17,7 @@ Adafruit_BNO055 bno = Adafruit_BNO055(55);
 
 const int T = 10;
 double delta = 0.1; //this controls the amount of time between measurements (in seconds)
-int current_time_step = 1;
+double current_time_step = 1;
 
 //create matrices and vectors
 double qW {1}, qX {0}, qY {0}, qZ {0}, qN {};
@@ -90,10 +90,12 @@ void display_vector(Matrix<3> vector)
  for(int i{}; i<3; i++)
  {
    Serial.print(vector(i), 6);
-   Serial.print("\t");
+   if (i < 2)
+   {
+    Serial.print(",");
+   }
  }
- Serial.println();
- Serial.println("=================================================");
+ Serial.println(";");
 }
 
 void display_matrix(Matrix<3, 3> matrix) {
@@ -165,7 +167,7 @@ void setup(void)
   // nh.initNode();
   // nh.advertise(next_sawyer_loc);
   Serial.begin(9600);
-  Serial.println("Orientation Sensor Test"); Serial.println("");
+  // Serial.println("Orientation Sensor Test"); Serial.println("");
   pinMode(LED_BUILTIN, 13);
   /* Initialise the sensor */
   if(!bno.begin())
@@ -243,8 +245,9 @@ void loop(void)
    current_spatial_velocity(1) = 0;
    current_spatial_velocity(2) = 0;
    digitalWrite(LED_BUILTIN, LOW);
-   Serial.println("======PUBLISH======");
-   Serial.println("Current Spatial Position:");
+  //  Serial.println("======PUBLISH======");
+  //  Serial.println("Current Spatial Position:");
+   Serial.print(current_time_step, ",");
    display_vector(current_spatial_pos);
    delay(1000);
   //  String test_str = String(current_spatial_pos(0),5)+' '+String(current_spatial_pos(1),5)+' '+String(current_spatial_pos(2),5);
