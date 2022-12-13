@@ -2,6 +2,7 @@ import rospy
 from geometry_msgs.msg import Point
 from std_msgs.msg import Float64MultiArray
 from moveit_commander import MoveGroupCommander
+from moveit_msgs.srv import GetPositionIK, GetPositionIKRequest, GetPositionIKResponse
 import numpy as np
 import warnings
 import time
@@ -9,7 +10,7 @@ import intera_interface
 
 from geometry_msgs.msg import Point
 
-def test_timing():
+def test_timing(best_ik_solution):
     arc = [
         np.array((0.61, 0.64, 0.22)),
         np.array((0.67, 0.50, 0.47)),
@@ -33,121 +34,103 @@ def test_timing():
 
     print(f"Average planning time: {(end - start) / counter}")
 
+def get_current_joint_angles(limb):
+    return np.array([limb.joint_angle(name) for name in limb.joint_names()])
 
-def best_ik_solution(p):
-    """
-    Returns the ik result that minimizes the largest joint change.
-    """
-
+def one_ik_sol_moveit(p):
     group = MoveGroupCommander("right_arm")
     group.set_position_target([p.x, p.y, p.z])
 
-    possible_solutions = []
-    for i in range(50):
+    def helper():
         plan = group.plan()
-        joint_trajectory_angles = np.array([list(x.positions) for x in plan[1].joint_trajectory.points])
+        return np.array([plan[1].joint_trajectory.points[-1].positions]), True
         
-        abs_change_in_theta = np.abs(np.array(joint_trajectory_angles[-1]) - np.array(joint_trajectory_angles[0]))
-        possible_solutions.append( (joint_trajectory_angles[-1], np.max(abs_change_in_theta)) )
+    return helper
 
-    (best_solution, best_cost) = min(possible_solutions, key = lambda x: x[1])
-    return best_solution
+def one_ik_sol_compute_ik(p):
+    request = GetPositionIKRequest()
+    request.ik_request.group_name = "right_arm"
+    link = "right_gripper_tip"
+    request.ik_request.ik_link_name = link
+    request.ik_request.pose_stamped.header.frame_id = "base"
+    request.ik_request.pose_stamped.pose.position.x = p.x
+    request.ik_request.pose_stamped.pose.position.y = p.y
+    request.ik_request.pose_stamped.pose.position.z = p.z
 
-def best_ik_solution2(p):
-    """
-    Returns the ik result that minimizes the largest joint change.
-    """
-    from moveit_msgs.srv import GetPositionIK, GetPositionIKRequest, GetPositionIKResponse
-    rospy.wait_for_service('compute_ik')
-    compute_ik = rospy.ServiceProxy('compute_ik', GetPositionIK)
-
-    def one_ik_sol():
-        
-        request = GetPositionIKRequest()
-        request.ik_request.group_name = "right_arm"
-        link = "right_gripper_tip"
-        request.ik_request.ik_link_name = link
-        request.ik_request.pose_stamped.header.frame_id = "base"
-        request.ik_request.pose_stamped.pose.position.x = p.x
-        request.ik_request.pose_stamped.pose.position.y = p.y
-        request.ik_request.pose_stamped.pose.position.z = p.z
+    def helper():
         response = compute_ik(request)
+        joint_state = dict(zip(response.solution.joint_state.name, response.solution.joint_state.position))
+        if not joint_state:
+            return None, False
+        final_thetas = np.array([joint_state[f"right_j{i}"] for i in range(7)])
+        return final_thetas, True
 
-        d = dict(zip(response.solution.joint_state.name, response.solution.joint_state.position))
-        if not d:
-            return -1
+    return helper
 
-        # print(d)
-        solution = np.array([d[f"right_j{i}"] for i in range(7)])
+def ik_sol_cost(initial_thetas, final_thetas):
+    return np.max(np.abs(final_thetas - initial_thetas))
 
-        return solution
-
-    current_thetas = get_current_joint_angles()
-
+def best_solution(one_sol, cost, attempts, alternate_sol = None):
     start = time.time()
+
     possible_solutions = []
-    for i in range(50):
-        desired_thetas = one_ik_sol()
-        if type(desired_thetas) == int:
+    for i in range(attempts):
+        sol, valid_sol = one_sol()
+        if valid_sol == False:
             continue
-        abs_change_in_theta = np.abs(desired_thetas - current_thetas)
-        possible_solutions.append( (desired_thetas, np.max(abs_change_in_theta)) )
+        possible_solutions.append( (sol, cost(sol)) )
 
-    temp = [x[1] for x in possible_solutions]
-    print(np.mean(temp), np.std(temp), len(np.unique(temp)))
+    if len(possible_solutions) == 0:
+        return None, False
     (best_solution, best_cost) = min(possible_solutions, key = lambda x: x[1])
-    end = time.time()
 
-    print(best_cost)
-    if best_cost > 2.5:
-        return best_ik_solution(p)
-    return best_solution
+    end = time.time()
+    print(f"Best cost out of {len(possible_solutions)} attempts: {best_cost}.")
+    return best_solution, best_cost
 
 def plan_path(max_publishing_freq):
 
-  path_pub = rospy.Publisher('actuation_path', Float64MultiArray, queue_size=10)
-  sleeper = rospy.Rate(max_publishing_freq)
+    limb = intera_interface.Limb('right')
+    path_pub = rospy.Publisher('actuation_path', Float64MultiArray, queue_size=10)
+    sleeper = rospy.Rate(max_publishing_freq)
 
-  print("Path planner ready.")
+    print("Path planner ready.")
 
-  def plan_path_helper(p):
-    # print(f"ik result for {p}")   
+    def plan_path_helper(p):
+        start = time.time()
 
-    start = time.time()
-    desired_thetas = best_ik_solution2(p)
+        initial_thetas = get_current_joint_angles(limb)
+        cost = lambda final_thetas: ik_sol_cost(initial_thetas, final_thetas)
+        one_ik_sol = one_ik_sol_compute_ik(p)
+        best_thetas, best_cost = best_solution(one_ik_sol, cost, 50)
 
-    arr = Float64MultiArray()
-    arr.data = desired_thetas
-    
-    # print(f"desired thetas {desired_thetas}")
-    path_pub.publish(arr)
-    print(f"Planning took {time.time() - start} seconds.")
-    sleeper.sleep()
+        if best_cost == False or best_cost > 2.5:
+            one_ik_sol = one_ik_sol_moveit(p)
+            thetas, c = best_solution(one_ik_sol, cost, 50)
+            if c < best_cost:
+                best_thetas, best_cost = thetas, c
+        
+        try:
+            arr = Float64MultiArray()
+            arr.data = best_thetas
+            path_pub.publish(arr)
+        except Exception as e:
+            print(best_thetas)
+            raise e
 
-  return plan_path_helper
+        print(f"Planning took {time.time() - start} seconds.")
+        # sleeper.sleep()
 
-def get_current_joint_angles():
-  limb = intera_interface.Limb('right')
-  current_angles = []
-  for name in limb.joint_names():
-    current_angles.append(limb.joint_angle(name))
-
-  return np.array(current_angles)
+    return plan_path_helper
 
 if __name__ == '__main__':
-  rospy.init_node('path_planner', anonymous=True)
-  min_publishing_period = 0.5
-  max_publishing_freq = 1 / min_publishing_period
+    rospy.init_node('path_planner', anonymous=True)
+    min_publishing_period = 0.5
+    max_publishing_freq = 1 / min_publishing_period
 
-  # test_timing()
+    rospy.wait_for_service('compute_ik')
+    compute_ik = rospy.ServiceProxy('compute_ik', GetPositionIK)
 
-  # p = Point()
-  # p.x, p.y, p.z = [0.61, 0.64, 0.22]
-  # for _ in range(5):
-  #   best_ik_solution2(p)
-
-  # get_current_joint_angles()
-
-  callback = plan_path(max_publishing_freq)
-  rospy.Subscriber("next_sawyer_loc", Point, callback)
-  rospy.spin()
+    callback = plan_path(max_publishing_freq)
+    rospy.Subscriber("next_sawyer_loc", Point, callback)
+    rospy.spin()

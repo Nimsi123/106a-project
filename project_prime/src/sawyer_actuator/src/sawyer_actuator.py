@@ -14,16 +14,14 @@ def control_joints_to_desired_angles(limb, desired_angles):
 
   while not close() and not rospy.is_shutdown():
       start = time.time()
-      while (time.time() - start) < 4:
+      while (time.time() - start) < 0.5:
         limb.set_joint_positions(joint_command)
 
 def actuator():
-  status_pub = rospy.Publisher('actuation_status', String, queue_size=10)
   free = True
 
   limb = intera_interface.Limb('right')
-  limb.set_joint_position_speed(0.6)
-
+  limb.set_joint_position_speed(0.4)
   print("Actuator ready.")
 
   def actuator_helper(desired_thetas):
@@ -34,15 +32,8 @@ def actuator():
       return
 
     free = False
-
     start = time.time()
-    status_pub.publish(f"Actuation started")
-    
-    desired_thetas = desired_thetas.data
-    print(f"received {desired_thetas}")
-    control_joints_to_desired_angles(limb, desired_thetas)
-
-    status_pub.publish(f"Actuation completed")
+    control_joints_to_desired_angles(limb, desired_thetas.data)
     print(f"Actuation took {time.time() - start} seconds.")
     free = True
 

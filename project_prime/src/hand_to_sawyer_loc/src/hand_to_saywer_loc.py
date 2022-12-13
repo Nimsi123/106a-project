@@ -44,7 +44,7 @@ def test_main(max_publishing_freq):
     np.array((0.63, -0.43, 0.39))
   ]
 
-  points = arc
+  points = imu_box # arc
 
   input("Start?")
   for point in points:
@@ -61,7 +61,7 @@ def test_main(max_publishing_freq):
 
 if __name__ == '__main__':
   rospy.init_node('hand_to_saywer_loc', anonymous=True)
-  min_publishing_period = 3
+  min_publishing_period = 4
   max_publishing_freq = 1 / min_publishing_period
 
   TEST = True
