@@ -1,7 +1,5 @@
 import rospy
 import numpy as np
-from std_msgs.msg import Float64MultiArray, String
-from trajectory_msgs.msg import MultiDOFJointTrajectory
 import intera_interface
 import time
 

@@ -8,8 +8,6 @@ import warnings
 import time
 import intera_interface
 
-from geometry_msgs.msg import Point
-
 def test_timing(best_ik_solution):
     arc = [
         np.array((0.61, 0.64, 0.22)),
@@ -107,13 +105,6 @@ def plan_path(max_publishing_freq):
         best_thetas, best_cost = best_solution(one_ik_sol, cost, 50)
 
         if best_cost == False or best_cost > 2.5:
-            
-            # if best_cost == False:
-            #     print("using moveit because no path was found", best_cost)
-            # elif best_cost > 2.5:
-            #     print("using moveit because cost too high", best_cost)
-            # else:
-            #     print("why are we using moveit??")
             one_ik_sol = one_ik_sol_moveit(p)
             thetas, c = best_solution(one_ik_sol, cost, 50)
             if best_cost == False or c < best_cost:
