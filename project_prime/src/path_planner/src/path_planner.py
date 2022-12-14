@@ -43,7 +43,7 @@ def one_ik_sol_moveit(p):
 
     def helper():
         plan = group.plan()
-        return np.array([plan[1].joint_trajectory.points[-1].positions]), True
+        return np.array(plan[1].joint_trajectory.points[-1].positions), True
         
     return helper
 
@@ -107,9 +107,9 @@ def plan_path(max_publishing_freq):
         if best_cost == False or best_cost > 2.5:
             one_ik_sol = one_ik_sol_moveit(p)
             thetas, c = best_solution(one_ik_sol, cost, 50)
-            if c < best_cost:
+            if best_cost == False or c < best_cost:
                 best_thetas, best_cost = thetas, c
-        
+
         try:
             arr = Float64MultiArray()
             arr.data = best_thetas

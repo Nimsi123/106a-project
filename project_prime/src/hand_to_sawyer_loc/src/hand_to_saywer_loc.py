@@ -44,7 +44,7 @@ def test_main(max_publishing_freq):
     np.array((0.63, -0.43, 0.39))
   ]
 
-  points = imu_box # arc
+  points = arc
 
   input("Start?")
   for point in points:
