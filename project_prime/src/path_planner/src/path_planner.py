@@ -91,32 +91,38 @@ def best_solution(one_sol, cost, attempts, alternate_sol = None):
 def plan_path(max_publishing_freq):
 
     limb = intera_interface.Limb('right')
+    initial_thetas = get_current_joint_angles(limb)
     path_pub = rospy.Publisher('actuation_path', Float64MultiArray, queue_size=10)
     sleeper = rospy.Rate(max_publishing_freq)
 
     print("Path planner ready.")
 
     def plan_path_helper(p):
+        nonlocal initial_thetas
+
         start = time.time()
 
-        initial_thetas = get_current_joint_angles(limb)
         cost = lambda final_thetas: ik_sol_cost(initial_thetas, final_thetas)
         one_ik_sol = one_ik_sol_compute_ik(p)
         best_thetas, best_cost = best_solution(one_ik_sol, cost, 50)
 
         if best_cost == False or best_cost > 2.5:
+            
+            # if best_cost == False:
+            #     print("using moveit because no path was found", best_cost)
+            # elif best_cost > 2.5:
+            #     print("using moveit because cost too high", best_cost)
+            # else:
+            #     print("why are we using moveit??")
             one_ik_sol = one_ik_sol_moveit(p)
             thetas, c = best_solution(one_ik_sol, cost, 50)
             if best_cost == False or c < best_cost:
                 best_thetas, best_cost = thetas, c
 
-        try:
-            arr = Float64MultiArray()
-            arr.data = best_thetas
-            path_pub.publish(arr)
-        except Exception as e:
-            print(best_thetas)
-            raise e
+        arr = Float64MultiArray()
+        arr.data = best_thetas
+        initial_thetas = best_thetas # set starting point for the next planner call
+        path_pub.publish(arr)
 
         print(f"Planning took {time.time() - start} seconds.")
         # sleeper.sleep()
