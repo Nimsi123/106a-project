@@ -1,11 +1,9 @@
-#!/usr/bin/env python
 import rospy
-from moveit_msgs.srv import GetPositionIK, GetPositionIKRequest
 from moveit_commander import MoveGroupCommander
 import numpy as np
-import warnings
-import time
 import intera_interface
+import time
+from geometry_msgs.msg import Point
 
 def control_joints_to_desired_angles(limb, desired_angles):
   joint_names = limb.joint_names()
@@ -17,15 +15,19 @@ def control_joints_to_desired_angles(limb, desired_angles):
 
   while not close() and not rospy.is_shutdown():
       start = time.time()
-      while (time.time() - start) < 5:
+      while (time.time() - start) < 4:
         limb.set_joint_positions(joint_command)
 
-def best_ik_solution(group):
+def best_ik_solution(p):
     """
     Returns the ik result that minimizes the largest joint change.
     """
+
+    group = MoveGroupCommander("right_arm")
+    group.set_position_target([p.x, p.y, p.z])
+
     possible_solutions = []
-    for i in range(40):
+    for i in range(80):
         plan = group.plan()
         joint_trajectory_angles = np.array([list(x.positions) for x in plan[1].joint_trajectory.points])
         
@@ -35,77 +37,24 @@ def best_ik_solution(group):
     (best_solution, best_cost) = min(possible_solutions, key = lambda x: x[1])
     return best_solution
 
-def main():
-    warnings.filterwarnings("error")
+def path_planner_and_actuator():
 
-    rospy.wait_for_service('compute_ik')
-    compute_ik = rospy.ServiceProxy('compute_ik', GetPositionIK)
+  limb = intera_interface.Limb('right')
+  limb.set_joint_position_speed(1.0)
+  print("Actuator ready to run.")
 
-    limb = intera_interface.Limb('right')
-    limb.set_joint_position_speed(1.0)
+  def helper(p):
+    print(f"Working on {p}")
+    desired_thetas = best_ik_solution(p)
+    
+    # print(f"desired thetas {desired_thetas}")
+    control_joints_to_desired_angles(limb, desired_thetas)
 
-    for i in range(points.shape[1]):
-        if rospy.is_shutdown():
-            break
-        point = points[:, i]
+  return helper
 
-        request = GetPositionIKRequest()
-        request.ik_request.group_name = "right_arm"
-        request.ik_request.ik_link_name = "right_gripper_tip"
-        request.ik_request.pose_stamped.header.frame_id = "base"     
-        
-        try:
-            response = compute_ik(request)
-            group = MoveGroupCommander("right_arm")
-            group.set_position_target(point)
-            desired_thetas = best_ik_solution(group)
-            control_joints_to_desired_angles(limb, desired_thetas)
-        except rospy.ServiceException as e:
-            print("Service call failed: %s"%e)
-
-def test():
-    warnings.filterwarnings("error")
-
-    rospy.wait_for_service('compute_ik')
-    compute_ik = rospy.ServiceProxy('compute_ik', GetPositionIK)
-
-    limb = intera_interface.Limb('right')
-    limb.set_joint_position_speed(0.3)
-
-    control_joints_to_desired_angles(limb, [0, 0, 0, 0, 0, 0, 0])
-
-    r = 0.8
-    time_steps = np.linspace(-np.pi / 4, np.pi / 4, 5)
-    x = r * np.cos(time_steps)
-    y = r * np.sin(time_steps)
-    z = 0.5 * np.ones(len(time_steps))
-    points = np.vstack((x, y, z))
-
-    ik_results = []
-    for i in range(points.shape[1]):
-        point = points[:, i]
-        request = GetPositionIKRequest()
-        request.ik_request.group_name = "right_arm"
-
-        link = "right_gripper_tip"
-
-        request.ik_request.ik_link_name = link
-        request.ik_request.pose_stamped.header.frame_id = "base"  
-        try:
-            response = compute_ik(request)
-            group = MoveGroupCommander("right_arm")
-            
-            group.set_position_target(point) # Setting just the position without specifying the orientation
-
-            desired_thetas = get_best_plan_angles(group)
-        except rospy.ServiceException as e:
-            print("Service call failed: %s"%e)
-        ik_results.append(desired_thetas)
-
-    for desired_thetas in ik_results:
-        control_joints_to_desired_angles(limb, desired_thetas)
-
-# Python's syntax for a main() method
 if __name__ == '__main__':
-    rospy.init_node('service_query')
-    test()
+  rospy.init_node('path_planner', anonymous=True)
+
+  callback = path_planner_and_actuator()
+  rospy.Subscriber("next_sawyer_loc", Point, callback)
+  rospy.spin()
