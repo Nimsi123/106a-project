@@ -8,6 +8,10 @@ import warnings
 import time
 import intera_interface
 
+COST_THRESHOLD = 3
+NUMBER_ATTEMPTS_COMPUTE_IK = 50
+NUMBER_ATTEMPTS_MOVE_IT = 50
+
 def test_timing(best_ik_solution):
     arc = [
         np.array((0.61, 0.64, 0.22)),
@@ -78,7 +82,7 @@ def best_solution(one_sol, cost, attempts, alternate_sol = None, end_early = Fal
             continue
         
         sol_cost = cost(sol)
-        if end_early and sol_cost < 2.5:
+        if end_early and sol_cost < COST_THRESHOLD:
             print(f"Quitting early after {i} steps with cost {sol_cost}.")
             return sol, sol_cost
         possible_solutions.append( (sol, sol_cost) )
@@ -108,11 +112,11 @@ def plan_path(max_publishing_freq):
 
         cost = lambda final_thetas: ik_sol_cost(initial_thetas, final_thetas)
         one_ik_sol = one_ik_sol_compute_ik(p)
-        best_thetas, best_cost = best_solution(one_ik_sol, cost, attempts = 50)
+        best_thetas, best_cost = best_solution(one_ik_sol, cost, attempts = NUMBER_ATTEMPTS_COMPUTE_IK)
 
-        if best_cost == False or best_cost > 2.5:
+        if best_cost == False or best_cost > COST_THRESHOLD:
             one_ik_sol = one_ik_sol_moveit(p)
-            thetas, c = best_solution(one_ik_sol, cost, attempts = 50, end_early = True)
+            thetas, c = best_solution(one_ik_sol, cost, attempts = NUMBER_ATTEMPTS_MOVE_IT, end_early = True)
             if best_cost == False or c < best_cost:
                 best_thetas, best_cost = thetas, c
 
@@ -135,5 +139,5 @@ if __name__ == '__main__':
     compute_ik = rospy.ServiceProxy('compute_ik', GetPositionIK)
 
     callback = plan_path(max_publishing_freq)
-    rospy.Subscriber("next_sawyer_loc", Point, callback)
+    rospy.Subscriber("/hand_loc", Point, callback)
     rospy.spin()
