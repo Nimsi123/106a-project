@@ -7,7 +7,10 @@
 # new environment variables
 
 # modified environment variables
-export LD_LIBRARY_PATH='/opt/ros/eecsbot_ws/devel/lib:/opt/ros/noetic/lib:/opt/ros/noetic/lib/x86_64-linux-gnu'
-export PKG_CONFIG_PATH='/opt/ros/eecsbot_ws/devel/lib/pkgconfig:/opt/ros/noetic/lib/pkgconfig:/opt/ros/noetic/lib/x86_64-linux-gnu/pkgconfig'
+export CMAKE_PREFIX_PATH="/home/cc/ee106a/fa22/class/ee106a-aew/ros_workspaces/project_prime/devel:$CMAKE_PREFIX_PATH"
+export LD_LIBRARY_PATH="/home/cc/ee106a/fa22/class/ee106a-aew/ros_workspaces/project_prime/devel/lib:$LD_LIBRARY_PATH"
+export PKG_CONFIG_PATH="/home/cc/ee106a/fa22/class/ee106a-aew/ros_workspaces/project_prime/devel/lib/pkgconfig:$PKG_CONFIG_PATH"
 export PWD='/home/cc/ee106a/fa22/class/ee106a-aew/ros_workspaces/project_prime/build'
-export PYTHONPATH='/opt/ros/eecsbot_ws/devel/lib/python3/dist-packages:/opt/ros/noetic/lib/python3/dist-packages'
+export PYTHONPATH="/home/cc/ee106a/fa22/class/ee106a-aew/ros_workspaces/project_prime/devel/lib/python3/dist-packages:$PYTHONPATH"
+export ROSLISP_PACKAGE_DIRECTORIES="/home/cc/ee106a/fa22/class/ee106a-aew/ros_workspaces/project_prime/devel/share/common-lisp:$ROSLISP_PACKAGE_DIRECTORIES"
+export ROS_PACKAGE_PATH="/home/cc/ee106a/fa22/class/ee106a-aew/ros_workspaces/project_prime/src:$ROS_PACKAGE_PATH"

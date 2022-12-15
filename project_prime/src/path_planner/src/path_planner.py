@@ -68,7 +68,7 @@ def one_ik_sol_compute_ik(p):
 def ik_sol_cost(initial_thetas, final_thetas):
     return np.max(np.abs(final_thetas - initial_thetas))
 
-def best_solution(one_sol, cost, attempts, alternate_sol = None):
+def best_solution(one_sol, cost, attempts, alternate_sol = None, end_early = False):
     start = time.time()
 
     possible_solutions = []
@@ -76,7 +76,12 @@ def best_solution(one_sol, cost, attempts, alternate_sol = None):
         sol, valid_sol = one_sol()
         if valid_sol == False:
             continue
-        possible_solutions.append( (sol, cost(sol)) )
+        
+        sol_cost = cost(sol)
+        if end_early and sol_cost < 2.5:
+            print(f"Quitting early after {i} steps with cost {sol_cost}.")
+            return sol, sol_cost
+        possible_solutions.append( (sol, sol_cost) )
 
     if len(possible_solutions) == 0:
         return None, False
@@ -84,6 +89,7 @@ def best_solution(one_sol, cost, attempts, alternate_sol = None):
 
     end = time.time()
     print(f"Best cost out of {len(possible_solutions)} attempts: {best_cost}.")
+    # print([round(x[1], 2) for x in possible_solutions])
     return best_solution, best_cost
 
 def plan_path(max_publishing_freq):
@@ -102,11 +108,11 @@ def plan_path(max_publishing_freq):
 
         cost = lambda final_thetas: ik_sol_cost(initial_thetas, final_thetas)
         one_ik_sol = one_ik_sol_compute_ik(p)
-        best_thetas, best_cost = best_solution(one_ik_sol, cost, 50)
+        best_thetas, best_cost = best_solution(one_ik_sol, cost, attempts = 50)
 
         if best_cost == False or best_cost > 2.5:
             one_ik_sol = one_ik_sol_moveit(p)
-            thetas, c = best_solution(one_ik_sol, cost, 50)
+            thetas, c = best_solution(one_ik_sol, cost, attempts = 50, end_early = True)
             if best_cost == False or c < best_cost:
                 best_thetas, best_cost = thetas, c
 

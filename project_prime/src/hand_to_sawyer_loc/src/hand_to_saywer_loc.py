@@ -46,6 +46,7 @@ def test_main(max_publishing_freq):
 
   points = imu_box # arc
 
+  # predefined inputs
   input("Start?")
   for point in points:
     if rospy.is_shutdown():
@@ -61,7 +62,7 @@ def test_main(max_publishing_freq):
 
 if __name__ == '__main__':
   rospy.init_node('hand_to_saywer_loc', anonymous=True)
-  min_publishing_period = 5
+  min_publishing_period = 3
   max_publishing_freq = 1 / min_publishing_period
 
   TEST = True
