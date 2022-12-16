@@ -4,6 +4,8 @@ import intera_interface
 import time
 from std_msgs.msg import Float64MultiArray
 
+CHECK_TIME_AT_DESIRED_ANGLES = 0.1
+
 def control_joints_to_desired_angles(limb, desired_angles):
   joint_names = limb.joint_names()
   joint_command = dict(zip(joint_names, desired_angles))
@@ -13,14 +15,14 @@ def control_joints_to_desired_angles(limb, desired_angles):
 
   while not close() and not rospy.is_shutdown():
       start = time.time()
-      while (time.time() - start) < 0.3:
+      while (time.time() - start) < CHECK_TIME_AT_DESIRED_ANGLES:
         limb.set_joint_positions(joint_command)
 
 def actuator():
   free = True
 
   limb = intera_interface.Limb('right')
-  limb.set_joint_position_speed(0.6)
+  limb.set_joint_position_speed(0.8)
   print("Actuator ready.")
 
   def actuator_helper(desired_thetas):

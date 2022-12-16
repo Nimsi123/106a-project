@@ -8,8 +8,8 @@ import warnings
 import time
 import intera_interface
 
-COST_THRESHOLD = 3
-NUMBER_ATTEMPTS_COMPUTE_IK = 50
+COST_THRESHOLD = 2.5
+NUMBER_ATTEMPTS_COMPUTE_IK = 100
 NUMBER_ATTEMPTS_MOVE_IT = 50
 
 def test_timing(best_ik_solution):
