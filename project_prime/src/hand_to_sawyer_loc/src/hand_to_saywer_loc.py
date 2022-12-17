@@ -4,7 +4,7 @@ from geometry_msgs.msg import Point
 
 def test_main(max_publishing_freq):
 
-  point_pub = rospy.Publisher('next_sawyer_loc', Point, queue_size=10)
+  point_pub = rospy.Publisher('/hand_loc', Point, queue_size=10)
 
   # Sets the minimum publishing rate by sleeping for 10hz
   sleeper = rospy.Rate(max_publishing_freq)
@@ -44,8 +44,9 @@ def test_main(max_publishing_freq):
     np.array((0.63, -0.43, 0.39))
   ]
 
-  points = imu_box # arc
+  points = arc
 
+  # predefined inputs
   input("Start?")
   for point in points:
     if rospy.is_shutdown():
@@ -61,7 +62,7 @@ def test_main(max_publishing_freq):
 
 if __name__ == '__main__':
   rospy.init_node('hand_to_saywer_loc', anonymous=True)
-  min_publishing_period = 5
+  min_publishing_period = 3
   max_publishing_freq = 1 / min_publishing_period
 
   TEST = True
